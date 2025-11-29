@@ -1,0 +1,142 @@
+# trading_bot.py - SIMPLIFIED VERSION FOR ISH
+import numpy as np
+import pandas as pd
+import yfinance as yf
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+class SimpleTradingBot:
+    def __init__(self, symbol='AAPL', initial_balance=10000):
+        self.symbol = symbol
+        self.initial_balance = initial_balance
+        self.balance = initial_balance
+        self.positions = 0
+        self.trades = []
+        
+    def fetch_data(self, period='6mo'):
+        """Fetch historical data"""
+        try:
+            stock = yf.Ticker(self.symbol)
+            self.data = stock.history(period=period)
+            print(f"✅ Data fetched for {self.symbol}")
+            print(f"📊 Data shape: {self.data.shape}")
+            return True
+        except Exception as e:
+            print(f"❌ Error: {e}")
+            return False
+    
+    def create_features(self, data):
+        """Simple features for ISH"""
+        df = data.copy()
+        
+        # Basic features only
+        df['returns'] = df['Close'].pct_change()
+        df['sma_10'] = df['Close'].rolling(10).mean()
+        df['sma_20'] = df['Close'].rolling(20).mean()
+        df['volume_sma'] = df['Volume'].rolling(10).mean()
+        
+        # Simple momentum
+        df['momentum'] = df['Close'] / df['Close'].shift(5) - 1
+        
+        # Target (next day return)
+        df['target'] = df['Close'].shift(-1) / df['Close'] - 1
+        
+        return df.dropna()
+    
+    def train_model(self, features, target):
+        """Simple Random Forest model (lighter than LSTM)"""
+        from sklearn.model_selection import train_test_split
+        
+        X_train, X_test, y_train, y_test = train_test_split(
+            features, target, test_size=0.2, random_state=42
+        )
+        
+        model = RandomForestRegressor(
+            n_estimators=50,  # Smaller for ISH
+            max_depth=5,
+            random_state=42
+        )
+        
+        model.fit(X_train, y_train)
+        score = model.score(X_test, y_test)
+        print(f"✅ Model trained! R² score: {score:.3f}")
+        
+        return model
+    
+    def backtest_simple(self):
+        """Simplified backtest"""
+        if not self.fetch_data():
+            return
+        
+        # Prepare data
+        feature_data = self.create_features(self.data)
+        feature_cols = ['returns', 'sma_10', 'sma_20', 'volume_sma', 'momentum']
+        features = feature_data[feature_cols]
+        target = feature_data['target']
+        
+        print("🤖 Training model...")
+        self.model = self.train_model(features, target)
+        
+        # Simple trading strategy
+        print("🚀 Running backtest...")
+        
+        for i, (idx, row) in enumerate(feature_data.iterrows()):
+            if i < 20:  # Skip initial period
+                continue
+                
+            current_features = [row[feature_cols]]
+            prediction = self.model.predict(current_features)[0]
+            current_price = row['Close']
+            
+            # Simple strategy
+            if prediction > 0.01 and self.positions == 0:  # Buy signal
+                shares = int(self.balance * 0.1 / current_price)  # 10% of balance
+                if shares > 0:
+                    cost = shares * current_price
+                    self.positions = shares
+                    self.balance -= cost
+                    self.trades.append({
+                        'date': idx, 'action': 'BUY', 
+                        'price': current_price, 'shares': shares
+                    })
+                    print(f"📈 BUY {shares} shares at ${current_price:.2f}")
+                    
+            elif prediction < -0.01 and self.positions > 0:  # Sell signal
+                revenue = self.positions * current_price
+                self.balance += revenue
+                pnl = revenue - (self.positions * self.trades[-1]['price'])
+                self.trades.append({
+                    'date': idx, 'action': 'SELL',
+                    'price': current_price, 'shares': self.positions,
+                    'pnl': pnl
+                })
+                print(f"📉 SELL {self.positions} shares at ${current_price:.2f} | P&L: ${pnl:.2f}")
+                self.positions = 0
+        
+        self.generate_report()
+    
+    def generate_report(self):
+        """Simple text-based report"""
+        print("\n" + "="*50)
+        print("📊 TRADING REPORT")
+        print("="*50)
+        
+        final_value = self.balance + (self.positions * self.data['Close'].iloc[-1])
+        total_return = (final_value - self.initial_balance) / self.initial_balance * 100
+        
+        print(f"Initial: ${self.initial_balance:,.2f}")
+        print(f"Final: ${final_value:,.2f}")
+        print(f"Return: {total_return:.2f}%")
+        print(f"Trades: {len([t for t in self.trades if t['action'] == 'BUY'])}")
+        
+        if any('pnl' in t for t in self.trades):
+            total_pnl = sum(t.get('pnl', 0) for t in self.trades)
+            print(f"Total P&L: ${total_pnl:.2f}")
+
+# Run the bot
+if __name__ == "__main__":
+    print("🚀 Starting AI Trading Bot in ISH...")
+    bot = SimpleTradingBot(symbol='AAPL', initial_balance=10000)
+    bot.backtest_simple()
