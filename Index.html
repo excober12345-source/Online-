@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="TradeMaster">
+    <meta name="theme-color" content="#1e3a8a">
+    <title>TradeMaster - Mobile Trading</title>
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .app-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            color: var(--dark);
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        /* iOS Notch Area */
+        .notch-area {
+            height: 44px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding-top: env(safe-area-inset-top);
+        }
+        
+        .time-display {
+            font-size: 14px;
+        }
+        
+        .app-content {
+            padding: 0 16px 80px 16px;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        /* Card Styles */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 16px 0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .price-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+        
+        /* Button Styles */
+        .btn-trade {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 18px;
+            border: none;
+            width: 100%;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn-trade:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-buy {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-sell {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* Price Display */
+        .price-display {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .price-change {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .positive {
+            color: var(--success);
+        }
+        
+        .negative {
+            color: var(--danger);
+        }
+        
+        /* Watchlist */
+        .watchlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .watchlist-item:last-child {
+            border-bottom: none;
+        }
+        
+        .symbol {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .company {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        /* Chart */
+        .chart-container {
+            height: 200px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        /* Loading */
+        .loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: white;
+            color: var(--dark);
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e5e7eb;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Trade Panel */
+        .trade-panel {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            transition: bottom 0.3s ease-in-out;
+            z-index: 1001;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom));
+        }
+        
+        .trade-panel.active {
+            bottom: 0;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .overlay.active {
+            display: block;
+        }
+        
+        /* Swipe to refresh */
+        .refresh-indicator {
+            text-align: center;
+            padding: 10px;
+            color: var(--primary);
+            display: none;
+        }
+        
+        /* Settings */
+        .settings-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            .app-container {
+                background: #111827;
+                color: white;
+            }
+            
+            .card {
+                background: #1f2937;
+                border-color: #374151;
+            }
+            
+            .bottom-nav {
+                background: #1f2937;
+                border-color: #374151;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <h3>TradeMaster</h3>
+        <p>Loading trading data...</p>
+    </div>
+    
+    <div class="app-container" id="app" style="display: none;">
+        <!-- iOS Notch Area -->
+        <div class="notch-area">
+            <div class="time-display" id="currentTime">9:41 AM</div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="app-content">
+            <!-- Refresh Indicator -->
+            <div class="refresh-indicator" id="refreshIndicator">
+                <i class="fas fa-sync fa-spin"></i> Refreshing...
+            </div>
+            
+            <!-- Market Overview -->
+            <div class="card price-card" id="marketOverview">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 id="currentSymbol">AAPL</h2>
+                        <p id="companyName">Apple Inc.</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="price-display" id="currentPrice">$175.25</div>
+                        <div class="price-change positive" id="priceChange">+2.15 (+1.24%)</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="btn-trade btn-buy" onclick="openTradePanel('BUY')">
+                        <i class="fas fa-arrow-up"></i> BUY
+                    </button>
+                    <button class="btn-trade btn-sell" onclick="openTradePanel('SELL')">
+                        <i class="fas fa-arrow-down"></i> SELL
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Watchlist -->
+            <div class="card" id="watchlistCard">
+                <h3><i class="fas fa-star"></i> Watchlist</h3>
+                <div id="watchlist">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Portfolio Summary -->
+            <div class="card" id="portfolioCard">
+                <h3><i class="fas fa-chart-line"></i> Portfolio</h3>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 36px; font-weight: 700; color: var(--success);" id="portfolioValue">$10,250.75</div>
+                    <div style="color: var(--success);" id="portfolioChange">+$250.75 (+2.51%) Today</div>
+                </div>
+                <div id="portfolioHoldings">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Market News -->
+            <div class="card" id="newsCard">
+                <h3><i class="fas fa-newspaper"></i> Market News</h3>
+                <div id="newsList">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="showTab('dashboard')">
+                <i class="fas fa-home nav-icon"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showTab('markets')">
+                <i class="fas fa-chart-bar nav-icon"></i>
+                <span>Markets</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showTab('trade')">
+                <i class="fas fa-exchange-alt nav-icon"></i>
+                <span>Trade</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showTab('portfolio')">
+                <i class="fas fa-wallet nav-icon"></i>
+                <span>Portfolio</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showTab('settings')">
+                <i class="fas fa-cog nav-icon"></i>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Trade Panel Overlay -->
+    <div class="overlay" id="tradeOverlay" onclick="closeTradePanel()"></div>
+    
+    <!-- Trade Panel -->
+    <div class="trade-panel" id="tradePanel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 id="tradeType">BUY AAPL</h3>
+            <button onclick="closeTradePanel()" style="background: none; border: none; font-size: 24px; color: #6b7280; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="card" style="margin: 0 0 20px 0;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Current Price:</span>
+                <span id="tradePrice">$175.25</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Available Balance:</span>
+                <span id="availableBalance">$10,250.75</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Max Shares:</span>
+                <span id="maxShares">58</span>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Quantity</label>
+            <input type="number" id="tradeQuantity" value="10" min="1" step="1" 
+                   style="width: 100%; padding: 16px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 18px;"
+                   oninput="updateTradeTotal()">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Order Type</label>
+            <div style="display: flex; gap: 10px;">
+                <button class="order-type-btn active" onclick="setOrderType('market')">Market</button>
+                <button class="order-type-btn" onclick="setOrderType('limit')">Limit</button>
+                <button class="order-type-btn" onclick="setOrderType('stop')">Stop</button>
+            </div>
+        </div>
+        
+        <div id="limitPriceSection" style="margin-bottom: 20px; display: none;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Limit Price</label>
+            <input type="number" id="limitPrice" placeholder="Enter limit price" step="0.01"
+                   style="width: 100%; padding: 16px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 18px;">
+        </div>
+        
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Total Cost:</span>
+                <span id="totalCost">$1,752.50</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Commission:</span>
+                <span id="commission">$1.75</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 18px;">
+                <span>Net Amount:</span>
+                <span id="netAmount">$1,754.25</span>
+            </div>
+        </div>
+        
+        <button class="btn-trade" id="executeTradeBtn" style="background: var(--success); color: white;">
+            <i class="fas fa-check"></i> CONFIRM TRADE
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
